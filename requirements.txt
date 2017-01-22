@@ -1,0 +1,4 @@
+lxml==3.7.2
+watchdog==0.8.3
+wxPython==3.0.2.0
+wxPython-common==3.0.0.0
