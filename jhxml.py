@@ -106,7 +106,7 @@ class MainFrame(baseframe.BaseFrame, Cursor):
         self.sw_orden_jrxml = True
         self.copia_campos = None
         self.controls_habilita = list()
-        self.watch = watch_file.WatchFile()
+        self.watch = watch_file.WatchFile(self)
 
         self.SetIcon(imagenes.xml.GetIcon())
 
@@ -120,15 +120,15 @@ class MainFrame(baseframe.BaseFrame, Cursor):
         self.img_cuadrog = self.imglst.Add(imagenes.cuadrog.GetBitmap())
         self.img_refrescar = self.imglst.Add(imagenes.refrescar.GetBitmap())
 
-        self.infobar = IB.InfoBar(self)
-
         # box = wx.BoxSizer()
         # notebook = wx.Notebook(self, wx.ID_ANY, style=wx.NB_TOP)
         # box.Add(notebook, 1, wx.EXPAND)
         # p1 = wx.Panel(notebook, wx.ID_ANY)
         # notebook.AddPage(p1, u"Campos iReport", True)
+
         box = wx.BoxSizer(wx.VERTICAL)
         p1 = wx.Panel(self, wx.ID_ANY)
+        self.infobar = IB.InfoBar(self)
         box.Add(self.infobar, 0, wx.EXPAND)
         box.Add(p1, 1, wx.EXPAND)
         #
@@ -138,7 +138,19 @@ class MainFrame(baseframe.BaseFrame, Cursor):
         self.CreateStatusBar(1, wx.ST_SIZEGRIP)
         self.set_size()
 
+        if util.is_windows:
+            # TODO:: peta en ubuntu
+            self.Bind(watch_file.EVT_WATCH, self.on_watch)
+
         wx.CallAfter(self.on_load)
+
+    def on_watch(self, e):
+        # accion = e.GetMyVal()
+        accion = "modificado"
+        fichero = os.path.basename(self.fic_jrxml.Value)
+        txt = "El fichero '%s' ha sido %s por otro proceso." % (fichero, accion)
+        self.infobar.Dismiss()
+        self.infobar.ShowMessage(txt, wx.ICON_INFORMATION)
 
     def pagina1(self, win):
         panel = wx.Panel(win, wx.ID_ANY)
@@ -366,7 +378,7 @@ class MainFrame(baseframe.BaseFrame, Cursor):
                 with open(fichero, 'r') as f:
                     self.jrxml_str = f.read()
 
-                self.watch.start(fichero, self.jrxml_modificado)
+                self.watch.start(fichero)
                 self.parse_jrxml()
                 self.carga_jrxml()
 
@@ -421,7 +433,7 @@ class MainFrame(baseframe.BaseFrame, Cursor):
                     with open(fic, 'w') as f:
                         f.write(self.jrxml_str)
 
-                    self.watch.start(fic, self.jrxml_modificado)
+                    self.watch.start(fic)
                     self.fic_jrxml.Value = fic
                     self.info("Fichero jrxml grabado satisfactoriamente.")
 
@@ -458,7 +470,7 @@ class MainFrame(baseframe.BaseFrame, Cursor):
                     with open(fic, 'w') as f:
                         f.write(self.jrxml_str)
 
-                    self.watch.start(fic, self.jrxml_modificado)
+                    self.watch.start(fic)
                     self.fic_jrxml.Value = fic
                     self.info("Fichero jrxml grabado satisfactoriamente.")
 
@@ -1521,10 +1533,6 @@ class MainFrame(baseframe.BaseFrame, Cursor):
 
         self.watch.stop()
         self.Destroy()
-
-    def jrxml_modificado(self, txt):
-        self.infobar.Dismiss()
-        self.infobar.ShowMessage(txt, wx.ICON_WARNING)
 
 
 class MySplashScreen(wx.SplashScreen):
